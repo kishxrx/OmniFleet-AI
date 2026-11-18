@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101716">
+  <title>OmniFleet AI · Fleet Operations</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="OmniFleet home">
+      <span class="brand-symbol"><span></span><span></span><span></span><span></span></span>
+      <span><strong>omnifleet<span>ai</span></strong><small>MISSION SYSTEMS</small></span>
+    </a>
+    <div class="workspace-label">WORKSPACE</div>
+    <div class="workspace-switch"><span class="workspace-avatar">N</span><span><b>Northstar Ops</b><small>Simulation workspace</small></span><span class="chevron">⌄</span></div>
+    <div class="nav-label">OPERATIONS</div>
+    <nav class="nav-list" aria-label="Main navigation">
+      <a class="nav-item active" href="#operations"><span class="nav-icon">⌖</span> Command overview <span class="nav-pip"></span></a>
+      <a class="nav-item" href="#mission-control"><span class="nav-icon">◎</span> Mission control</a>
+      <a class="nav-item" href="#fleet-panel"><span class="nav-icon">⟡</span> Fleet assets <span class="nav-count" id="nav-fleet-count">3</span></a>
+      <a class="nav-item" href="#swarm-panel"><span class="nav-icon">⌁</span> Swarm network</a>
+      <a class="nav-item" href="#activity-panel"><span class="nav-icon">◷</span> Activity & logs</a>
+    </nav>
+    <div class="nav-label secondary-label">SYSTEM</div>
+    <div class="nav-item muted-nav"><span class="nav-icon">⌘</span> Agent orchestration</div>
+    <div class="nav-item muted-nav"><span class="nav-icon">▤</span> Analytics</div>
+    <div class="sidebar-spacer"></div>
+    <div class="safety-card"><div class="safety-icon">✓</div><div><b>Safety systems active</b><small>Human approval required</small></div><span class="status-led"></span></div>
+    <div class="profile-row"><div class="profile-avatar">OP</div><div><b>Operator</b><small>Demo administrator</small></div><button id="reset" class="icon-button" title="Reset simulation" aria-label="Reset simulation">↻</button></div>
+  </aside>
+
+  <main class="main-content" id="operations">
+    <header class="topbar">
+      <div class="breadcrumbs"><span>Northstar Ops</span><span class="crumb-sep">/</span><b>Command overview</b></div>
+      <div class="topbar-right"><span class="environment"><i></i> SIMULATION ENVIRONMENT</span><span class="top-divider"></span><span class="clock" id="clock">--:--:-- UTC</span><button class="help-button" id="help-open" title="Open operator guide" aria-label="Open operator guide" aria-haspopup="dialog">?</button></div>
+    </header>
+
+    <section class="page-heading">
+      <div><div class="eyebrow">FLEET OPERATIONS <span>·</span> LIVE COMMAND</div><h1>Command overview</h1><p>Monitor autonomous assets, coordinate missions and respond to fleet events.</p></div>
+      <div class="heading-actions"><span class="live-status"><i></i> SYSTEM NOMINAL</span><button class="outline-button" id="refresh-now">↻ Refresh</button></div>
+    </section>
+
+    <section class="metric-grid" aria-label="Fleet summary">
+      <article class="metric-card"><div class="metric-top"><span>FLEET ASSETS</span><span class="metric-icon teal">⟡</span></div><div class="metric-value" id="count">—</div><div class="metric-foot"><span class="metric-dot teal-dot"></span> Registered vehicles</div></article>
+      <article class="metric-card"><div class="metric-top"><span>ACTIVE MISSIONS</span><span class="metric-icon blue">◎</span></div><div class="metric-value" id="active-missions">—</div><div class="metric-foot">Across the fleet</div></article>
+      <article class="metric-card"><div class="metric-top"><span>ASSETS IN MOTION</span><span class="metric-icon amber">↗</span></div><div class="metric-value" id="active">—</div><div class="metric-foot">Moving or returning</div></article>
+      <article class="metric-card"><div class="metric-top"><span>FLEET READINESS</span><span class="metric-icon green">✓</span></div><div class="metric-value" id="readiness">—<small>%</small></div><div class="metric-foot"><span class="metric-dot green-dot"></span><span id="readiness-label">Operational availability</span></div></article>
+    </section>
+
+    <section class="operations-grid">
+      <div class="map-column">
+        <section class="surface map-surface" aria-label="Operational map">
+          <div class="surface-header map-header"><div><div class="surface-kicker">COMMON OPERATING PICTURE</div><h2>Operational map</h2><div class="surface-subtitle"><span id="theatre-name">Demo Test Range · Bengaluru</span> <span class="bullet">·</span> WGS84 geographic view</div></div><div class="map-header-right"><span class="map-live"><i></i> LIVE SIMULATION</span><button class="icon-button map-expand" id="map-fit" title="Fit operating area">⤢</button></div></div>
+          <div class="map-toolbar"><div class="map-legend"><span><i class="legend-air"></i> Air vehicle</span><span><i class="legend-ground"></i> Ground vehicle</span><span><i class="legend-route"></i> Planned route</span><span><i class="legend-nogo"></i> Restricted zone</span></div><div class="layer-controls"><button class="layer-button active" data-layer="routes">Routes</button><button class="layer-button active" data-layer="zones">Zones</button><button class="layer-button active" data-layer="labels">Labels</button><button class="layer-button active" data-layer="sensors">Sensor rings</button><button class="layer-button" data-layer="comms">Comm range</button><button class="layer-button active" data-layer="objects">Test objects</button><button class="layer-button active" data-layer="observations">Observations</button></div></div>
+          <div class="map-tasking-bar"><span class="tasking-instruction">⌖ &nbsp; Select an asset, then click inside the geofence to place a waypoint.</span><select id="map-vehicle" aria-label="Vehicle for map waypoint"><option value="scout-1">Scout-1</option><option value="scout-2">Scout-2</option><option value="relay-1">Relay-1</option></select><button id="map-tasking" class="outline-button">＋ Place waypoint</button><button id="object-place-mode" class="outline-button">＋ Place test object</button><span id="map-tasking-status" role="status">TASKING OFF</span></div>
+          <div class="coverage-toolbar"><div><b>AREA COVERAGE PLANNER</b><small id="coverage-status">Draw a patrol boundary, then generate coordinated sectors.</small></div><label>LANE SPACING <select id="coverage-spacing"><option value="40">40 m</option><option value="60">60 m</option><option value="80" selected>80 m</option><option value="120">120 m</option><option value="160">160 m</option></select></label><div class="coverage-actions"><button class="outline-button" id="coverage-draw">＋ Draw area</button><button class="outline-button" id="coverage-finish" disabled>Generate sectors</button><button class="text-button" id="coverage-clear" disabled>Clear</button></div></div>
+          <div class="map-canvas-wrap"><div id="map" role="application" aria-label="Geospatial fleet map showing vehicles, routes, geofence and coverage sectors"></div><canvas id="map-fallback" width="1200" height="720" aria-label="Fallback fleet map"></canvas><div class="map-overlay-note"><span class="overlay-pulse"></span> Simulated positions · 1 Hz updates</div></div>
+          <div class="map-footer"><span><i class="legend-home">◇</i> HOME BASE <b id="home-coordinate">—</b></span><span id="map-projection-note">WGS84 DISPLAY · SIMULATED LOCAL THEATRE</span><span id="map-asset-count">03 ASSETS TRACKED</span></div>
+        </section>
+
+        <section class="surface mission-surface" id="mission-control">
+          <div class="surface-header compact-header"><div><div class="surface-kicker">TASKING & EXECUTION</div><h2>Mission control</h2></div><span class="ai-badge"><span>✦</span> AI ASSISTED</span></div>
+          <div class="mission-composer"><div class="composer-main"><label for="cmd">MISSION INSTRUCTION</label><textarea id="cmd" placeholder="Describe the operation. Example: Send Scout-1 north and Scout-2 east. Keep Relay-1 stationary."></textarea><div class="prompt-examples"><button data-cmd="Send Scout-1 north and Scout-2 east. Keep Relay-1 stationary.">Multi-asset patrol <span>↗</span></button><button data-cmd="Return Scout-1 home.">Return to base <span>↗</span></button><button data-cmd="Send Scout-2 west.">Waypoint task <span>↗</span></button></div></div><div class="composer-action"><div class="approval-note"><span>◉</span><div><b>Operator approval</b><small>Required before execution</small></div></div><button class="primary-button" id="plan"><span>✦</span> Generate plan <b>→</b></button></div></div>
+          <div class="proposal-panel"><div class="proposal-heading"><div><span class="proposal-indicator"></span><b>Mission proposal</b><small id="status">NO PLAN</small></div><span class="proposal-id" id="proposal-id">Awaiting instruction</span></div><pre id="proposal">Your mission plan, assigned assets and safety checks will appear here.</pre><div class="proposal-actions"><button class="primary-button small-primary" id="approve" disabled>Approve & execute <span>→</span></button><button class="outline-button" id="reject" disabled>Reject proposal</button></div></div>
+        </section>
+      </div>
+
+      <aside class="right-column">
+        <section class="surface fleet-surface" id="fleet-panel"><div class="surface-header compact-header"><div><div class="surface-kicker">REGISTERED VEHICLES</div><h2>Fleet assets</h2></div><span class="count-pill" id="fleet-pill">03</span></div><div class="fleet-summary"><span><i class="summary-dot"></i> <b id="fleet-online">3</b> available</span><span id="fleet-unavailable">0 unavailable</span></div><div id="fleet" class="fleet-list"></div><div class="fleet-foot"><span>FLEET HEALTH</span><b id="fleet-health">100%</b><div class="health-track"><i id="fleet-health-bar"></i></div></div></section>
+
+        <section class="surface agent-surface"><div class="surface-header compact-header"><div><div class="surface-kicker">AUTONOMOUS WORKFLOW</div><h2>Agent activity</h2></div><span class="agent-live"><i></i> LIVE</span></div><div id="agents" class="agent-stack"><div class="agent-row"><span class="agent-glyph">✦</span><span><b>Mission Planner</b><small>Awaiting task</small></span><i class="agent-state"></i></div><div class="agent-row"><span class="agent-glyph">⟡</span><span><b>Fleet Coordinator</b><small>Standing by</small></span><i class="agent-state"></i></div><div class="agent-row"><span class="agent-glyph">⬡</span><span><b>Safety & Policy</b><small>Policy enforcement</small></span><i class="agent-state"></i></div><div class="agent-row"><span class="agent-glyph">▷</span><span><b>Execution Agent</b><small>Awaiting approval</small></span><i class="agent-state"></i></div><div class="agent-row"><span class="agent-glyph">◷</span><span><b>Mission Monitor</b><small>Monitoring fleet</small></span><i class="agent-state"></i></div></div></section>
+
+        <section class="surface recovery-surface"><div class="surface-header compact-header"><div><div class="surface-kicker">RESILIENCE TESTING</div><h2>Failure simulation</h2></div><span class="warning-mark">!</span></div><p>Inject an asset outage to test mission degradation detection and recovery reassignment.</p><div id="failure-buttons" class="failure-list"></div><div class="recovery-foot"><span class="shield">✓</span> Recovery requires operator approval</div></section>
+      </aside>
+    </section>
+
+
+    <section class="surface sensor-surface" id="sensor-lab">
+      <div class="surface-header compact-header sensor-heading"><div><div class="surface-kicker">SYNTHETIC SENSOR MODEL · HUMAN-IN-THE-LOOP TESTING</div><h2>Sensor intelligence & test objects</h2><p class="surface-subtitle">Place virtual objects on the map, inspect simulated sensor footprints and watch independent vehicles share observations.</p></div><span class="sensor-badge">SIMULATED SENSORS</span></div>
+      <div class="sensor-metrics">
+        <div><span>ACTIVE TEST OBJECTS</span><b id="sensor-object-count">0</b></div>
+        <div><span>OBSERVATIONS</span><b id="sensor-observation-count">0</b></div>
+        <div><span>CORROBORATED OBJECTS</span><b id="sensor-corroborated-count">0</b></div>
+        <div><span>SENSOR OVERLAPS</span><b id="sensor-overlap-count">0</b></div>
+      </div>
+      <div class="sensor-grid">
+        <div class="sensor-card">
+          <div class="swarm-card-heading"><b>Test object controls</b><small>Operator-created virtual objects</small></div>
+          <label class="field-label" for="test-object-label">OBJECT LABEL</label><input id="test-object-label" class="swarm-input" value="Test Object A" maxlength="100">
+          <div class="sensor-form-row"><label>CATEGORY<select id="test-object-category" class="swarm-select"><option value="marker">Marker</option><option value="vehicle">Vehicle-shaped</option><option value="person">Person-shaped</option><option value="structure">Structure</option><option value="other">Other</option></select></label><label>DIFFICULTY<select id="test-object-difficulty" class="swarm-select"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></label></div>
+          <label class="control-row"><span>Object visible to sensors<small>Hidden objects produce no observation</small></span><input type="checkbox" id="test-object-visible" checked></label>
+          <div class="sensor-button-row"><button id="sensor-place-object" class="primary-button">Place on map <span>↗</span></button><button id="sensor-scan-now" class="outline-button">Scan now</button></div>
+          <p class="swarm-note" id="sensor-placement-note">Select Place on map, then click inside the operating boundary. Choose Move beside an existing object to reposition it.</p>
+          <div class="sensor-object-list" id="sensor-object-list"><span class="muted-text">No virtual objects placed.</span></div>
+        </div>
+        <div class="sensor-card">
+          <div class="swarm-card-heading"><b>Vehicle sensor settings</b><small>Simulation parameters · metres</small></div>
+          <div id="sensor-vehicle-settings" class="sensor-vehicle-list"><span class="muted-text">Loading sensor settings…</span></div>
+          <div class="sensor-legend"><span><i class="sensor-legend-ring"></i> Sensor footprint</span><span><i class="comm-legend-ring"></i> Communication range</span></div>
+          <p class="swarm-note">Ranges are illustrative circles, not validated sensor fields of view, radio coverage or real-world performance.</p>
+        </div>
+        <div class="sensor-card">
+          <div class="swarm-card-heading"><b>Observation ledger</b><small>Source and provenance</small></div>
+          <div id="sensor-observation-list" class="sensor-observation-list"><span class="muted-text">No observations yet. Place an object inside a sensor footprint.</span></div>
+          <div class="sensor-provenance-note">A corroborated status requires observations from at least two distinct simulated vehicles. It is not proof of object identity.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface blackbox-surface" id="blackbox-panel">
+      <div class="surface-header compact-header blackbox-heading"><div><div class="surface-kicker">FLIGHT-DATA RECORDER · TELEMETRY PLAYBACK</div><h2>Blackbox analytics</h2><p class="surface-subtitle">Review position, motion, battery, sensor and communications state captured by the simulator.</p></div><div class="blackbox-controls"><select id="blackbox-vehicle" class="swarm-select" aria-label="Blackbox vehicle"></select><button id="blackbox-refresh" class="outline-button">Refresh data</button></div></div>
+      <div class="blackbox-metrics"><div><span>RECORDED SAMPLES</span><b id="blackbox-samples">0</b></div><div><span>LATEST BATTERY</span><b id="blackbox-battery">—</b></div><div><span>PEAK SPEED</span><b id="blackbox-peak-speed">—</b></div><div><span>DISTANCE TRAVELLED</span><b id="blackbox-distance">—</b></div><div><span>LATEST STATUS</span><b id="blackbox-status">—</b></div></div>
+      <div class="blackbox-chart-grid"><article class="blackbox-chart-card"><div><b>Speed profile</b><small>Metres per second</small></div><canvas id="blackbox-speed-chart" width="760" height="190"></canvas></article><article class="blackbox-chart-card"><div><b>Battery profile</b><small>Percentage remaining</small></div><canvas id="blackbox-battery-chart" width="760" height="190"></canvas></article></div>
+      <div class="blackbox-replay"><div class="blackbox-replay-top"><b>Telemetry replay</b><span id="blackbox-replay-label">Select a sample to inspect its recorded position.</span></div><input id="blackbox-replay-slider" type="range" min="0" max="0" value="0" disabled><div class="blackbox-replay-actions"><button id="blackbox-play" class="outline-button" disabled>▶ Play replay</button><button id="blackbox-show-map" class="outline-button" disabled>Show sample on map</button><span id="blackbox-replay-time">No samples</span></div></div>
+      <div class="blackbox-events"><div class="swarm-card-heading"><b>Blackbox event log</b><small>Operator, sensor and system events</small></div><div id="blackbox-event-list" class="blackbox-event-list"><span class="muted-text">No recorded events.</span></div></div>
+    </section>
+
+    <section class="surface swarm-surface" id="swarm-panel">
+      <div class="surface-header compact-header swarm-heading"><div><div class="surface-kicker">PEER-TO-PEER · SHARED SITUATIONAL AWARENESS</div><h2>Swarm intelligence & communications</h2><p class="surface-subtitle">Structured vehicle messaging, coordination offers and operator-controlled network policies.</p></div><span class="swarm-status" id="swarm-status"><i></i> CONNECTING</span></div>
+      <div class="swarm-metrics">
+        <div><span>NETWORK</span><b id="swarm-network-value">—</b></div>
+        <div><span>RADIOS ONLINE</span><b id="swarm-radios-value">—</b></div>
+        <div><span>PEER MESH</span><b id="swarm-mesh-value">—</b></div>
+        <div><span>SHARED DETECTIONS</span><b id="swarm-detections-value">—</b></div>
+        <div><span>MESSAGES</span><b id="swarm-messages-value">—</b></div>
+      </div>
+      <div class="swarm-grid">
+        <div class="swarm-card">
+          <div class="swarm-card-heading"><b>Network policy</b><small>Human controls</small></div>
+          <label class="control-row"><span>Swarm communications <small>Master network switch</small></span><input type="checkbox" id="swarm-enabled" checked></label>
+          <label class="field-label" for="swarm-mode">COORDINATION MODE</label>
+          <select id="swarm-mode" class="swarm-select"><option value="hybrid">Hybrid · central + peer mesh</option><option value="centralized">Centralized · coordinator relay</option></select>
+          <label class="control-row"><span>Peer mesh <small>Direct vehicle-to-vehicle links</small></span><input type="checkbox" id="swarm-peer-mesh" checked></label>
+          <label class="control-row"><span>Coordinator link <small>Operator and central AI connection</small></span><input type="checkbox" id="swarm-central-link" checked></label>
+          <div class="peer-test-fields"><label>LATENCY (SIM TICKS)<input id="swarm-latency" class="swarm-input" type="number" min="0" max="10" step="1" value="0"></label><label>PACKET LOSS (%)<input id="swarm-packet-loss" class="swarm-input" type="number" min="0" max="100" step="1" value="0"></label></div>
+          <div class="swarm-button-row"><button class="outline-button" id="swarm-save-config">Apply network policy</button><button class="text-button" id="swarm-conflict-scan">Scan route conflicts</button></div>
+          <div class="swarm-note" id="swarm-config-note">Messages are simulated in-process. These controls do not operate radio hardware.</div>
+        </div>
+        <div class="swarm-card">
+          <div class="swarm-card-heading"><b>Vehicle radios</b><small>Individual link controls</small></div>
+          <div id="swarm-radios" class="swarm-radio-list"><span class="muted-text">Loading vehicle radios…</span></div>
+          <div class="swarm-button-row"><button class="outline-button" id="swarm-status-request">Request fleet status</button><button class="text-button" id="swarm-peer-test">Test peer link</button></div>
+          <div class="peer-test-fields"><label>FROM <select id="peer-test-sender" class="swarm-select"></select></label><label>TO <select id="peer-test-recipient" class="swarm-select"></select></label></div>
+        </div>
+        <div class="swarm-card">
+          <div class="swarm-card-heading"><b>Operator broadcast</b><small>Information only · never executable</small></div>
+          <label class="field-label" for="swarm-recipient">RECIPIENTS</label>
+          <select id="swarm-recipient" class="swarm-select"><option value="all">All connected vehicles</option></select>
+          <label class="field-label" for="swarm-broadcast-text">MESSAGE</label>
+          <textarea id="swarm-broadcast-text" class="swarm-textarea" maxlength="500" placeholder="Example: Maintain current sectors and report any change in availability."></textarea>
+          <button class="primary-button swarm-primary" id="swarm-broadcast">Broadcast to fleet <span>→</span></button>
+        </div>
+        <div class="swarm-card detection-card">
+          <div class="swarm-card-heading"><b>Simulate shared detection</b><small>Creates a coordination proposal</small></div>
+          <div class="detection-fields"><label>REPORTING VEHICLE<select id="detection-source" class="swarm-select"></select></label><label>LABEL<input id="detection-label" class="swarm-input" value="Unclassified anomaly" maxlength="100"></label><label>LOCAL X<input id="detection-x" class="swarm-input" type="number" min="4" max="96" value="64"></label><label>LOCAL Y<input id="detection-y" class="swarm-input" type="number" min="4" max="96" value="58"></label><label>CONFIDENCE<input id="detection-confidence" class="swarm-input" type="number" min="0" max="1" step="0.01" value="0.92"></label></div>
+          <button class="outline-button" id="swarm-detection-submit">Broadcast detection & request inspection</button>
+          <p class="swarm-note">Demo coordinates are local 0–100 values. An inspection proposal remains pending until an operator approves it.</p>
+          <div id="swarm-detection-result" class="swarm-result" role="status">No simulated detection submitted.</div>
+        </div>
+        <div class="swarm-card shared-picture-card">
+          <div class="swarm-card-heading"><b>Shared fleet picture</b><small>Latest peer-reported state</small></div>
+          <div id="swarm-shared-picture" class="shared-picture-list"><span class="muted-text">Awaiting peer telemetry…</span></div>
+          <div class="swarm-button-row"><span class="swarm-note">Vehicle intents and detections are shared as structured events.</span></div>
+        </div>
+        <div class="swarm-card message-card">
+          <div class="swarm-card-heading"><b>Communication stream</b><small>Structured protocol · newest first</small></div>
+          <div id="swarm-message-feed" class="swarm-message-feed"><span class="muted-text">Waiting for swarm messages…</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="surface activity-surface" id="activity-panel"><div class="surface-header compact-header"><div><div class="surface-kicker">AUDIT & TELEMETRY</div><h2>Operations activity</h2></div><span class="activity-filter">LATEST EVENTS <span>⌄</span></span></div><div class="activity-columns"><div class="activity-stream" id="events">Waiting for telemetry…</div><div class="activity-side"><div class="activity-side-stat"><span>MISSION RECORDS</span><b id="missions">—</b></div><div class="activity-side-stat"><span>LOW BATTERY ALERTS</span><b id="low">—</b></div><div class="activity-side-stat"><span>SIMULATION TICK</span><b>1.0s</b></div></div></div></section>
+
+    <footer><span>OMNIFLEET AI <b>·</b> FLEET OPERATIONS CONSOLE · BUILD 0.9.2</span><span><i></i> SOFTWARE SIMULATION ONLY <b>·</b> NO HARDWARE LINK</span></footer>
+  </main>
+  <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
+    <div class="help-dialog-head"><div><div class="surface-kicker">OPERATOR QUICK REFERENCE</div><h2 id="help-title">Using OmniFleet AI</h2></div><button id="help-close" class="icon-button" aria-label="Close operator guide">×</button></div>
+    <div class="help-dialog-body">
+      <section><b>1 · Create a mission</b><p>Enter a command in Mission Control, select Generate plan, review the actions and checks, then approve or reject the proposal.</p><a href="#mission-control" data-help-jump>Go to Mission Control ↗</a></section>
+      <section><b>2 · Task from the map</b><p>Select an available vehicle, choose Place waypoint, and click inside the operating geofence. A proposal is created; it does not move until approved.</p></section>
+      <section><b>3 · Test sensors</b><p>Choose Place on map, set the virtual object's properties, click the map, then select Scan now. Review observations and provenance in the ledger.</p><a href="#sensor-lab" data-help-jump>Go to Sensor Intelligence ↗</a></section>
+      <section><b>4 · Review the blackbox</b><p>Select a vehicle, refresh telemetry, scrub the replay slider, or play/pause the captured samples.</p><a href="#blackbox-panel" data-help-jump>Go to Blackbox Analytics ↗</a></section>
+      <section><b>5 · Exercise the swarm</b><p>Set the network mode and links, apply the policy, test a peer link, request status or broadcast an informational message. Detection proposals still require operator approval.</p><a href="#swarm-panel" data-help-jump>Go to Swarm Communications ↗</a></section>
+      <p class="help-safety-note"><b>Simulation only.</b> No controls connect to physical vehicles, radios, cameras or autopilots. Do not use for navigation or safety-critical decisions.</p>
+    </div>
+  </dialog>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/static/app.js"></script>
+</body></html>
